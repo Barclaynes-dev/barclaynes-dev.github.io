@@ -60,6 +60,34 @@
       transition: background var(--t), color var(--t);
       cursor: none;
     }
+
+    /* ══════════════════════════════════════════
+       CUSTOM SCROLLBAR
+    ══════════════════════════════════════════ */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 100px;
+      border: 2px solid var(--bg);
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent);
+    }
+
+    /* Firefox */
+    html {
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) var(--bg);
+    }
+
     a { color: inherit; text-decoration: none; }
 
     /* Cursor (match portfolio) */
@@ -513,6 +541,40 @@
       color: var(--text-faint);
     }
 
+    /* ─── Back to Top Button ─── */
+    .btn-top {
+      position: fixed;
+      bottom: 2rem;
+      left: 2rem;
+      z-index: 90;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--accent2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: none; /* Relies on custom cursor */
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(15px);
+      transition: opacity 0.3s var(--ease-out), transform 0.3s var(--ease-out), border-color 0.3s, background 0.3s, color 0.3s;
+    }
+
+    .btn-top.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    .btn-top:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(43, 117, 116, 0.06);
+    }
+
     footer {
       padding: 1.8rem 3.5rem;
       border-top: 1px solid var(--border-sub);
@@ -558,21 +620,37 @@
       .search-head { flex-direction: column; align-items: flex-start; }
       .search-note { text-align: left; }
       .search-row { grid-template-columns: 1fr; }
+      
+      /* Scale down Back to Top button on mobile */
+      .btn-top {
+        bottom: 1.5rem;
+        left: 1.5rem;
+        width: 38px;
+        height: 38px;
+      }
+      .btn-top svg {
+        width: 18px;
+        height: 18px;
+      }
     }
   </style>
 </head>
 
 <body>
-  <!-- ─── Cursor ─── -->
   <div class="cur" id="cur"></div>
   <div class="cur2" id="cur2"></div>
 
   <nav>
     <div class="nav-left">
       <a href="index.html" class="nav-logo">BARCLAY<em>NES</em></a>
-      <a class="nav-back" href="index.html">← <span class="nav-back-full">Back to portfolio</span><span class="nav-back-mobile">Back</span></a>
+      <a class="nav-back" href="index.html"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 4px; transform: translateY(-1px);"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> <span class="nav-back-full">Back to portfolio</span><span class="nav-back-mobile">Back</span></a>
     </div>
-    <button class="btn-theme" id="themeBtn"><span id="ti">☾</span> <span id="tt">Dark</span></button>
+    <button class="btn-theme" id="themeBtn">
+      <span id="ti">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+      </span>
+      <span id="tt">Dark</span>
+    </button>
   </nav>
 
   <header>
@@ -605,8 +683,7 @@
       </section>
 
       <div id="allProjectsContainer">
-        <!-- Dynamically populated by ProjectsEngine -->
-      </div>
+        </div>
     </div>
   </main>
 
@@ -616,6 +693,12 @@
       <span class="ft-copy">© 2025 · UICT Nakawa · Kampala, Uganda</span>
     </div>
   </footer>
+
+  <button id="backToTop" class="btn-top" aria-label="Back to top">
+    <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="18 15 12 9 6 15"></polyline>
+    </svg>
+  </button>
 
   <script src="js/projects-engine.js"></script>
   <script>
@@ -654,6 +737,23 @@
       cur2.style.top = ry + 'px';
       requestAnimationFrame(raf);
     })();
+
+    /* ═══════════════════════════════════
+       BACK TO TOP LOGIC
+    ═══════════════════════════════════ */
+    const backToTopBtn = document.getElementById('backToTop');
+
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 300) {
+        backToTopBtn.classList.add('visible');
+      } else {
+        backToTopBtn.classList.remove('visible');
+      }
+    }, { passive: true });
+
+    backToTopBtn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
 
     /* ═══════════════════════════════════
        HERO PLEXUS (canvas, desktop-only)
@@ -1044,7 +1144,11 @@
     const applyTheme = (theme) => {
       root.setAttribute('data-theme', theme);
       const dark = theme === 'dark';
-      document.getElementById('ti').textContent = dark ? '☾' : '☀';
+      
+      const sunIcon = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
+      const moonIcon = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+      
+      document.getElementById('ti').innerHTML = dark ? moonIcon : sunIcon;
       document.getElementById('tt').textContent = dark ? 'Dark' : 'Light';
     };
 
@@ -1060,4 +1164,3 @@
   </script>
 </body>
 </html>
-

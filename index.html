@@ -102,6 +102,34 @@
       transition: background var(--t), color var(--t);
     }
 
+    /* ══════════════════════════════════════════
+       CUSTOM SCROLLBAR
+    ══════════════════════════════════════════ */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 100px;
+      border: 2px solid var(--bg);
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent);
+    }
+
+    /* Firefox */
+    html {
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) var(--bg);
+    }
+
+
     a {
       color: inherit;
       text-decoration: none;
@@ -1074,7 +1102,7 @@
     .about-photo {
       position: relative;
       overflow: hidden;
-      background: var(--bg-surface);
+      background: none; /* Removed background to prevent gap visibility */
       min-height: 600px;
     }
 
@@ -1091,7 +1119,7 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      object-position: center top;
+      object-position: center;
       filter: grayscale(18%);
       transition: filter .6s ease;
     }
@@ -2164,7 +2192,12 @@
       <li><a href="#contact">./Contact</a></li>
     </ul>
     <div class="nav-right">
-      <button class="btn-theme" id="themeBtn"><span id="ti">☾</span> <span id="tt">Dark</span></button>
+      <button class="btn-theme" id="themeBtn">
+        <span id="ti">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </span>
+        <span id="tt">Dark</span>
+      </button>
       <button class="hamburger" id="hambtn"><span></span><span></span><span></span></button>
     </div>
   </nav>
@@ -2284,8 +2317,8 @@
         <h2 class="sh">Real Code,<br>Real Impact.</h2>
       </div>
       <div class="work-links">
-        <a href="all-projects.html" class="work-gh">All projects →</a>
-        <a href="https://github.com/barclaynes" target="_blank" class="work-gh">GitHub ↗</a>
+        <a href="all-projects.html" class="work-gh">All projects <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-left: 2px; transform: translateY(-1px);"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></a>
+        <a href="https://github.com/barclaynes" target="_blank" class="work-gh">GitHub <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-left: 2px; transform: translateY(-1px);"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg></a>
       </div>
     </div>
 
@@ -2640,7 +2673,11 @@
     document.getElementById('themeBtn').addEventListener('click', () => {
       const dark = document.documentElement.getAttribute('data-theme') === 'dark';
       document.documentElement.setAttribute('data-theme', dark ? 'light' : 'dark');
-      document.getElementById('ti').textContent = dark ? '☀' : '☾';
+      
+      const sunIcon = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
+      const moonIcon = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+      
+      document.getElementById('ti').innerHTML = dark ? sunIcon : moonIcon;
       document.getElementById('tt').textContent = dark ? 'Light' : 'Dark';
     });
 
@@ -2844,8 +2881,10 @@
 
     // 1. Generic Reveals (.rev)
     gsap.utils.toArray('.rev').forEach(el => {
+      // Skip vertical translation for the about photo to prevent top gaps
+      const isAboutPhoto = el.classList.contains('about-photo');
       gsap.fromTo(el,
-        { autoAlpha: 0, y: 40 },
+        { autoAlpha: 0, y: isAboutPhoto ? 0 : 40 },
         {
           autoAlpha: 1,
           y: 0,
@@ -2914,10 +2953,10 @@
 
     // 4. About Photo Parallax
     gsap.fromTo('.about-photo img',
-      { scale: 1.1, y: -20 },
+      { scale: 1.2, y: -30 },
       {
-        scale: 1,
-        y: 20,
+        scale: 1.1,
+        y: 30,
         ease: "none",
         scrollTrigger: {
           trigger: '.about-photo',

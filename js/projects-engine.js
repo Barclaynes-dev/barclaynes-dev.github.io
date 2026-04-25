@@ -118,8 +118,9 @@ const ProjectsEngine = {
 
     createProjectArticleHTML(p) {
         const links = [];
-        if (p.github) links.push(`<a class="plink" href="${p.github}" target="_blank" rel="noreferrer">Code ↗</a>`);
-        if (p.live) links.push(`<a class="plink" href="${p.live}" target="_blank" rel="noreferrer">Live ↗</a>`);
+        const arrowSvg = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-left: 3px; transform: translateY(-1px);"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>`;
+        if (p.github) links.push(`<a class="plink" href="${p.github}" target="_blank" rel="noreferrer">Code ${arrowSvg}</a>`);
+        if (p.live) links.push(`<a class="plink" href="${p.live}" target="_blank" rel="noreferrer">Live ${arrowSvg}</a>`);
 
         return `
             <article class="p" data-tags="${p.tags.join(',')}">
