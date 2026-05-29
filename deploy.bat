@@ -5,12 +5,12 @@ echo             Portfolio Deployment Tool
 echo ===================================================
 echo.
 
-:: Check for changes using git status
+:: Check for changes using git status and file size
 git status --porcelain > temp_status.txt
-set /p status_content=<temp_status.txt
+for %%I in (temp_status.txt) do set file_size=%%~zI
 del temp_status.txt
 
-if "%status_content%"=="" (
+if "%file_size%"=="0" (
     echo [INFO] No local changes detected. Checking remote...
     git push origin main
     if %errorlevel% equ 0 (
