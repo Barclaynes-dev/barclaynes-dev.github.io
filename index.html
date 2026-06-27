@@ -1,0 +1,2312 @@
+@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BARCLAYNES — Mugabi Whycliff</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,400;1,600&family=Space+Mono:wght@400;700&display=swap"
+    rel="stylesheet" />
+
+  <!-- GSAP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+  <!-- Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <style>
+    /* ============================================================
+       TOKENS
+    ============================================================ */
+    :root {
+      --black: #080808;
+      --parchment: #EDE8DF;
+      --parchment-dim: rgba(237, 232, 223, 0.55);
+      --amber: #E07B2F;
+      --amber-glow: rgba(224, 123, 47, 0.18);
+      --mono: 'Space Mono', monospace;
+      --serif: 'Cormorant Garamond', serif;
+    }
+
+    /* ============================================================
+       RESET & BASE
+    ============================================================ */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--black);
+      color: var(--parchment);
+      font-family: var(--mono);
+      cursor: none;
+    }
+
+    ::selection {
+      background: var(--amber);
+      color: var(--black);
+    }
+
+    /* ============================================================
+       CUSTOM CURSOR
+    ============================================================ */
+    #cursor {
+      position: fixed;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--amber);
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: width 0.25s ease, height 0.25s ease, opacity 0.25s ease;
+    }
+
+    #cursor.expand {
+      width: 28px;
+      height: 28px;
+      opacity: 0.25;
+      background: var(--amber);
+    }
+
+    /* ============================================================
+       WEBGL CANVAS — ambient background
+    ============================================================ */
+    #bg-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ============================================================
+       WORLD — horizontal strip of all zones
+    ============================================================ */
+    #world {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 500vw;
+      /* 5 zones × 100vw */
+      height: 100vh;
+      display: flex;
+      z-index: 1;
+      will-change: transform;
+    }
+
+    .zone {
+      width: 100vw;
+      height: 100vh;
+      flex-shrink: 0;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* ============================================================
+       ZONE NAV — right edge vertical tracker
+    ============================================================ */
+    #zone-nav {
+      position: fixed;
+      right: 28px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0;
+      z-index: 100;
+      opacity: 0;
+    }
+
+    #zone-nav::before {
+      content: '';
+      position: absolute;
+      right: 2px;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: rgba(237, 232, 223, 0.1);
+    }
+
+    .zone-dot {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      padding: 10px 0;
+      position: relative;
+    }
+
+    .zone-dot-label {
+      font-family: var(--mono);
+      font-size: 8px;
+      letter-spacing: 0.25em;
+      color: transparent;
+      transition: color 0.4s ease;
+      white-space: nowrap;
+    }
+
+    .zone-dot-mark {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: rgba(237, 232, 223, 0.22);
+      transition: background 0.4s ease, transform 0.4s ease;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .zone-dot.active .zone-dot-mark {
+      background: var(--amber);
+      transform: scale(2);
+    }
+
+    .zone-dot.active .zone-dot-label {
+      color: var(--amber);
+    }
+
+    .zone-dot:hover .zone-dot-label {
+      color: var(--parchment-dim);
+    }
+
+    .zone-dot:hover .zone-dot-mark {
+      background: var(--parchment-dim);
+    }
+
+    /* ============================================================
+       TOP NAV CONTAINER (Zone Label + Arrows)
+    ============================================================ */
+    #top-nav-container {
+      position: fixed;
+      top: 32px;
+      left: 40px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 100;
+      opacity: 0;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.25em;
+    }
+
+    #zone-label {
+      color: var(--parchment-dim);
+      white-space: nowrap;
+    }
+
+    .top-arrow {
+      color: var(--amber);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      animation: arrow-blink 1.5s infinite;
+      transition: opacity 0.3s ease;
+      user-select: none;
+    }
+
+    .top-arrow:hover {
+      color: var(--parchment);
+    }
+
+    .arrow-ext {
+      display: inline-block;
+      overflow: hidden;
+      max-width: 0;
+      transition: max-width 0.3s ease;
+      white-space: nowrap;
+    }
+
+    .top-arrow.expanded .arrow-ext {
+      max-width: 4em;
+    }
+
+    @keyframes arrow-blink {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.2;
+      }
+    }
+
+    /* ============================================================
+       VERTICAL AMBER RULE — decorative element used per zone
+    ============================================================ */
+    .v-rule {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: linear-gradient(to bottom, transparent, var(--amber), transparent);
+      opacity: 0.35;
+    }
+
+    /* ============================================================
+       ① ENTRY ZONE
+    ============================================================ */
+    #zone-entry {
+      background: transparent;
+      flex-direction: column;
+    }
+
+    #entry-crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    #line-v {
+      position: absolute;
+      left: 50%;
+      top: -45vh;
+      width: 1px;
+      height: 0;
+      background: linear-gradient(to bottom, transparent, var(--amber) 60%, transparent);
+      transform: translateX(-50%);
+    }
+
+    #line-h {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 0;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--amber), transparent);
+      transform: translate(-50vw, -50%);
+    }
+
+    #entry-wordmark {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: var(--serif);
+      font-size: clamp(2.5rem, 6vw, 5.5rem);
+      font-weight: 700;
+      letter-spacing: 0.3em;
+      color: var(--parchment);
+      white-space: nowrap;
+      text-align: center;
+      opacity: 0;
+    }
+
+    #entry-wordmark .letter {
+      display: inline-block;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    #entry-sub {
+      position: absolute;
+      top: calc(50% + clamp(2.8rem, 5vw, 5rem));
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      color: var(--parchment-dim);
+      white-space: nowrap;
+      opacity: 0;
+    }
+
+    #enter-prompt {
+      position: absolute;
+      top: calc(50% + clamp(5rem, 9vw, 8rem));
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.35em;
+      color: var(--amber);
+      cursor: pointer;
+      opacity: 0;
+      white-space: nowrap;
+      border: 1px solid var(--amber);
+      padding: 10px 28px;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    #enter-prompt:hover {
+      background: var(--amber);
+      color: var(--black);
+    }
+
+    /* ============================================================
+       ② ORIGIN ZONE
+    ============================================================ */
+    #zone-origin {
+      padding: 0 10vw;
+      align-items: flex-start;
+    }
+
+    .origin-inner {
+      width: 100%;
+      padding-top: 10vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 8vw;
+      align-items: start;
+    }
+
+    .origin-left {}
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      color: var(--amber);
+      margin-bottom: 2.5rem;
+    }
+
+    .origin-name {
+      font-family: var(--serif);
+      font-size: clamp(3.5rem, 7vw, 7rem);
+      font-weight: 700;
+      line-height: 0.92;
+      color: var(--parchment);
+      margin-bottom: 3rem;
+    }
+
+    .origin-bio {
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 2;
+      color: var(--parchment-dim);
+      max-width: 42ch;
+      border-left: 1px solid var(--amber);
+      padding-left: 1.5rem;
+    }
+
+    .origin-right {
+      display: flex;
+      flex-direction: column;
+      gap: 3.5rem;
+      padding-top: 6rem;
+    }
+
+    .meta-block {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .meta-label {
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      color: var(--amber);
+      opacity: 0.7;
+    }
+
+    .meta-value {
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      color: var(--parchment);
+    }
+
+    .origin-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--amber);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--amber);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.3;
+      }
+    }
+
+    /* ============================================================
+       ③ WORK ZONE
+    ============================================================ */
+    #zone-work {
+      align-items: flex-start;
+      padding: 0 8vw;
+    }
+
+    .work-inner {
+      width: 100%;
+      padding-top: 10vh;
+    }
+
+    .work-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 4rem;
+      border-bottom: 1px solid rgba(237, 232, 223, 0.1);
+      padding-bottom: 1.5rem;
+    }
+
+    .section-title {
+      font-family: var(--serif);
+      font-size: clamp(2.5rem, 5vw, 4.5rem);
+      font-weight: 700;
+      color: var(--parchment);
+      line-height: 1;
+    }
+
+    .work-links {
+      display: flex;
+      gap: 2rem;
+      font-size: 10px;
+      letter-spacing: 0.25em;
+    }
+
+    .work-links a {
+      color: var(--parchment-dim);
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    .work-links a:hover {
+      color: var(--amber);
+    }
+
+    .project-list {
+      display: flex;
+      flex-direction: column;
+      max-height: 65vh;
+      overflow-y: auto;
+      padding-bottom: 15vh; /* Breathing space */
+      padding-right: 1.5rem;
+    }
+
+    /* Custom Scrollbar for project-list */
+    .project-list::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .project-list::-webkit-scrollbar-track {
+      background: rgba(237, 232, 223, 0.05);
+    }
+
+    .project-list::-webkit-scrollbar-thumb {
+      background: var(--amber);
+      border-radius: 4px;
+    }
+
+    .project-entry {
+      display: grid;
+      grid-template-columns: 60px 1fr auto;
+      gap: 0 2rem;
+      align-items: center;
+      padding: 1.4rem 0;
+      border-bottom: 1px solid rgba(237, 232, 223, 0.07);
+      text-decoration: none;
+      color: inherit;
+      transition: background 0.3s ease;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .project-entry::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 1px;
+      background: var(--amber);
+      transition: width 0.4s ease;
+    }
+
+    .project-entry:hover::after {
+      width: 100%;
+    }
+
+    .project-entry:hover .project-title {
+      color: var(--amber);
+    }
+
+    .project-entry:hover .project-num {
+      color: var(--amber);
+    }
+
+    .project-num {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: var(--parchment-dim);
+      transition: color 0.3s;
+    }
+
+    .project-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .project-title {
+      font-family: var(--serif);
+      font-size: clamp(1.1rem, 2vw, 1.6rem);
+      font-weight: 600;
+      color: var(--parchment);
+      transition: color 0.3s;
+    }
+
+    .project-desc {
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      color: var(--parchment-dim);
+      line-height: 1.6;
+    }
+
+    .project-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .tag {
+      font-size: 9px;
+      letter-spacing: 0.15em;
+      color: var(--amber);
+      border: 1px solid var(--amber);
+      padding: 3px 8px;
+      opacity: 0.7;
+    }
+
+    /* Renare special entry */
+    .project-entry.renare-entry {
+      border-top: 1px solid rgba(224, 123, 47, 0.25);
+      margin-top: 1.5rem;
+    }
+
+    .renare-badge {
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      color: var(--amber);
+      border: 1px solid var(--amber);
+      padding: 2px 8px;
+      margin-left: 12px;
+      vertical-align: middle;
+    }
+
+    /* ============================================================
+       ④ CRAFT ZONE
+    ============================================================ */
+    #zone-craft {
+      align-items: flex-start;
+      padding: 0 8vw;
+    }
+
+    .craft-inner {
+      width: 100%;
+      padding-top: 10vh;
+    }
+
+    .craft-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 4rem;
+      border-bottom: 1px solid rgba(237, 232, 223, 0.1);
+      padding-bottom: 1.5rem;
+    }
+
+    .craft-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8vh;
+      max-height: 65vh;
+      overflow-y: auto;
+      padding-bottom: 15vh;
+      padding-right: 1.5rem;
+      width: 100%;
+    }
+
+    .craft-list::-webkit-scrollbar {
+      width: 4px;
+    }
+    .craft-list::-webkit-scrollbar-track {
+      background: rgba(237, 232, 223, 0.05);
+    }
+    .craft-list::-webkit-scrollbar-thumb {
+      background: var(--amber);
+      border-radius: 4px;
+    }
+
+    .craft-item {
+      display: flex;
+      gap: 6vw;
+      align-items: flex-start;
+      border-bottom: 1px solid rgba(237, 232, 223, 0.07);
+      padding-bottom: 4rem;
+    }
+
+    .craft-visual {
+      flex: 1.2;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .craft-img-wrap {
+      width: 100%;
+      min-height: 350px;
+      background: rgba(237, 232, 223, 0.04);
+      border: 1px solid rgba(237, 232, 223, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .craft-img-wrap img {
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      opacity: 0;
+      transform: scaleY(0);
+      transform-origin: bottom;
+    }
+
+    .craft-placeholder {
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      color: var(--parchment-dim);
+      text-align: center;
+    }
+
+    .craft-meta {
+      flex: 0.8;
+      display: flex;
+      flex-direction: column;
+      gap: 2.5rem;
+      padding-top: 0.5rem;
+    }
+
+    .craft-title {
+      font-family: var(--serif);
+      font-size: clamp(1.8rem, 3vw, 2.8rem);
+      font-weight: 700;
+      line-height: 1.1;
+      color: var(--parchment);
+    }
+
+    .craft-intent {
+      font-size: 11px;
+      line-height: 1.9;
+      color: var(--parchment-dim);
+      border-left: 1px solid var(--amber);
+      padding-left: 1rem;
+    }
+
+    .palette-strip {
+      display: flex;
+      gap: 0;
+      height: 36px;
+    }
+
+    .palette-swatch {
+      flex: 1;
+      height: 100%;
+      position: relative;
+    }
+
+    .palette-swatch::after {
+      content: attr(data-hex);
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 8px;
+      letter-spacing: 0.1em;
+      color: var(--parchment-dim);
+      white-space: nowrap;
+    }
+
+    .font-showcase {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .font-label {
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      color: var(--amber);
+      opacity: 0.7;
+    }
+
+    .font-display {
+      font-size: 1.4rem;
+      color: var(--parchment);
+      line-height: 1.2;
+    }
+
+    .craft-psd-link {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      color: var(--parchment-dim);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(237, 232, 223, 0.2);
+      padding-bottom: 2px;
+      transition: color 0.3s ease, border-color 0.3s ease;
+    }
+
+    .craft-psd-link:hover {
+      color: var(--amber);
+      border-color: var(--amber);
+    }
+
+    .view-more-btn {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.25em;
+      color: var(--amber);
+      background: transparent;
+      border: 1px solid var(--amber);
+      padding: 12px 32px;
+      cursor: pointer;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    .view-more-btn:hover {
+      background: var(--amber);
+      color: var(--black);
+    }
+
+    /* ============================================================
+       CRAFT DRAWER — full-screen slide-up overlay
+    ============================================================ */
+    #craft-drawer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--black);
+      z-index: 500;
+      transform: translateY(100%);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #craft-drawer-header {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 28px 5vw 20px;
+      border-bottom: 1px solid rgba(237, 232, 223, 0.1);
+      flex-shrink: 0;
+      background: var(--black);
+      position: relative;
+      z-index: 2;
+    }
+
+    #craft-drawer-back {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      color: var(--amber);
+      background: transparent;
+      border: 1px solid var(--amber);
+      padding: 8px 18px;
+      cursor: pointer;
+      transition: background 0.3s ease, color 0.3s ease;
+      flex-shrink: 0;
+    }
+
+    #craft-drawer-back:hover {
+      background: var(--amber);
+      color: var(--black);
+    }
+
+    #craft-drawer-title {
+      font-family: var(--serif);
+      font-size: clamp(1.4rem, 2.5vw, 2rem);
+      font-weight: 700;
+      color: var(--parchment);
+      letter-spacing: 0.08em;
+    }
+
+    #craft-drawer-count {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      color: var(--parchment-dim);
+    }
+
+    /* Toolbar — search + category pills */
+    #craft-drawer-toolbar {
+      flex-shrink: 0;
+      padding: 1.2rem 5vw 0;
+      background: var(--black);
+      border-bottom: 1px solid rgba(237, 232, 223, 0.07);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      padding-bottom: 1.2rem;
+    }
+
+    #craft-search-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    #craft-search-wrap::before {
+      content: '/';
+      position: absolute;
+      left: 14px;
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--amber);
+      pointer-events: none;
+      opacity: 0.8;
+    }
+
+    #craft-search {
+      width: 100%;
+      background: rgba(237, 232, 223, 0.04);
+      border: 1px solid rgba(237, 232, 223, 0.12);
+      color: var(--parchment);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      padding: 10px 14px 10px 30px;
+      outline: none;
+      transition: border-color 0.3s ease, background 0.3s ease;
+      border-radius: 0;
+      -webkit-appearance: none;
+    }
+
+    #craft-search::placeholder {
+      color: rgba(237, 232, 223, 0.25);
+      letter-spacing: 0.2em;
+    }
+
+    #craft-search:focus {
+      border-color: var(--amber);
+      background: rgba(224, 123, 47, 0.05);
+    }
+
+    #craft-search-clear {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      color: var(--parchment-dim);
+      font-size: 14px;
+      cursor: pointer;
+      padding: 2px 4px;
+      line-height: 1;
+      opacity: 0;
+      transition: opacity 0.2s ease, color 0.2s ease;
+      pointer-events: none;
+    }
+
+    #craft-search-clear.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #craft-search-clear:hover {
+      color: var(--amber);
+    }
+
+    .craft-filter-pills {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-pill {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.25em;
+      padding: 5px 14px;
+      border: 1px solid rgba(237, 232, 223, 0.2);
+      background: transparent;
+      color: var(--parchment-dim);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      white-space: nowrap;
+    }
+
+    .filter-pill:hover {
+      border-color: var(--amber);
+      color: var(--amber);
+    }
+
+    .filter-pill.active {
+      background: var(--amber);
+      border-color: var(--amber);
+      color: var(--black);
+    }
+
+    .drawer-no-results {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 6rem 2rem;
+      gap: 1rem;
+      text-align: center;
+    }
+
+    .drawer-no-results.visible {
+      display: flex;
+    }
+
+    .drawer-no-results-icon {
+      font-family: var(--serif);
+      font-size: 3rem;
+      color: rgba(237, 232, 223, 0.1);
+      line-height: 1;
+    }
+
+    .drawer-no-results-title {
+      font-family: var(--serif);
+      font-size: 1.4rem;
+      color: var(--parchment-dim);
+    }
+
+    .drawer-no-results-sub {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: rgba(237, 232, 223, 0.25);
+    }
+
+    #craft-drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 3rem 5vw 4rem;
+      scrollbar-width: thin;
+      scrollbar-color: var(--amber) rgba(237, 232, 223, 0.05);
+    }
+
+    #craft-drawer-body::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #craft-drawer-body::-webkit-scrollbar-track {
+      background: rgba(237, 232, 223, 0.05);
+    }
+
+    #craft-drawer-body::-webkit-scrollbar-thumb {
+      background: var(--amber);
+      border-radius: 4px;
+    }
+
+    .craft-drawer-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2.5rem 2rem;
+    }
+
+    .drawer-craft-card {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .drawer-craft-img {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      background: rgba(237, 232, 223, 0.04);
+      border: 1px solid rgba(237, 232, 223, 0.1);
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.35s ease;
+    }
+
+    .drawer-craft-card:hover .drawer-craft-img {
+      border-color: var(--amber);
+    }
+
+    .drawer-craft-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.5s ease;
+    }
+
+    .drawer-craft-card:hover .drawer-craft-img img {
+      transform: scale(1.04);
+    }
+
+    .drawer-craft-img .craft-placeholder {
+      font-size: 9px;
+      letter-spacing: 0.25em;
+      color: var(--parchment-dim);
+      text-align: center;
+    }
+
+    .drawer-craft-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .drawer-craft-eyebrow {
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      color: var(--amber);
+      opacity: 0.75;
+    }
+
+    .drawer-craft-title {
+      font-family: var(--serif);
+      font-size: clamp(1rem, 1.5vw, 1.3rem);
+      font-weight: 700;
+      color: var(--parchment);
+      line-height: 1.2;
+      transition: color 0.3s ease;
+    }
+
+    .drawer-craft-card:hover .drawer-craft-title {
+      color: var(--amber);
+    }
+
+    .drawer-craft-palette {
+      display: flex;
+      gap: 0;
+      height: 6px;
+      margin-top: 0.3rem;
+    }
+
+    .drawer-craft-palette span {
+      flex: 1;
+      height: 100%;
+    }
+
+    .drawer-craft-intent {
+      font-size: 10px;
+      line-height: 1.7;
+      color: var(--parchment-dim);
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-top: 0.2rem;
+    }
+
+    .drawer-craft-link {
+      margin-top: auto;
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      color: var(--parchment-dim);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(237, 232, 223, 0.2);
+      padding-bottom: 2px;
+      display: inline-block;
+      transition: color 0.3s ease, border-color 0.3s ease;
+    }
+
+    .drawer-craft-link:hover {
+      color: var(--amber);
+      border-color: var(--amber);
+    }
+
+    @media (max-width: 1024px) {
+      .craft-drawer-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .craft-drawer-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.8rem 1.2rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .craft-drawer-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ============================================================
+       ⑤ SIGNAL ZONE
+    ============================================================ */
+    #zone-signal {
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .signal-inner {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      padding: 0 10vw;
+      gap: 0 8vw;
+    }
+
+    .signal-left {}
+
+    .signal-email-label {
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      color: var(--amber);
+      margin-bottom: 1rem;
+    }
+
+    .signal-email {
+      font-family: var(--serif);
+      font-size: clamp(1.4rem, 3vw, 2.5rem);
+      font-weight: 600;
+      color: var(--parchment);
+      text-decoration: none;
+      display: block;
+      margin-bottom: 3rem;
+      border-bottom: 1px solid transparent;
+      padding-bottom: 4px;
+      transition: border-color 0.4s ease, color 0.4s ease;
+    }
+
+    .signal-email:hover {
+      border-color: var(--amber);
+      color: var(--amber);
+    }
+
+    .signal-details {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .signal-row {
+      display: grid;
+      grid-template-columns: 90px 1fr;
+      gap: 0 1rem;
+      font-size: 11px;
+    }
+
+    .signal-row-label {
+      color: var(--amber);
+      opacity: 0.6;
+      letter-spacing: 0.2em;
+      font-size: 9px;
+      padding-top: 2px;
+    }
+
+    .signal-row-value {
+      color: var(--parchment-dim);
+    }
+
+    .signal-right {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      align-items: flex-start;
+    }
+
+    .signal-link {
+      font-size: 11px;
+      letter-spacing: 0.25em;
+      color: var(--parchment-dim);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: color 0.3s ease;
+    }
+
+    .signal-link::before {
+      content: '//';
+      color: var(--amber);
+      font-size: 10px;
+    }
+
+    .signal-link:hover {
+      color: var(--amber);
+    }
+
+    .signal-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1em;
+      background: var(--amber);
+      margin-left: 4px;
+      animation: blink 1.2s step-end infinite;
+      vertical-align: middle;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0;
+      }
+    }
+
+    /* ============================================================
+       ZONE ENTRY ANIMATIONS — initial hidden states
+    ============================================================ */
+    .fade-in-zone {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+
+    /* ============================================================
+       RESPONSIVE
+    ============================================================ */
+    @media (max-width: 768px) {
+      .zone-dot-label {
+        display: none;
+      }
+
+      .origin-inner {
+        grid-template-columns: 1fr;
+      }
+
+      .origin-right {
+        padding-top: 2rem;
+        gap: 2rem;
+      }
+
+      .craft-item {
+        flex-direction: column;
+      }
+
+      .signal-inner {
+        grid-template-columns: 1fr;
+        padding: 6vh 6vw 4rem;
+        align-items: start;
+        align-content: start;
+        overflow-y: auto;
+        height: 100%;
+      }
+
+      .signal-right {
+        margin-top: 2.5rem;
+      }
+
+      /* Stack label above value on mobile */
+      .signal-row {
+        grid-template-columns: 1fr;
+        gap: 6px 0;
+        padding: 1rem 0;
+        border-bottom: 1px solid rgba(237, 232, 223, 0.07);
+      }
+
+      .signal-row-label {
+        padding-top: 0;
+      }
+
+      .signal-details {
+        gap: 0;
+      }
+
+      .signal-right {
+        gap: 2rem;
+      }
+
+      .project-entry {
+        grid-template-columns: 40px 1fr;
+      }
+
+      .project-tags {
+        display: none;
+      }
+    }
+
+    /* ============================================================
+       SKIP / REDUCED MOTION
+    ============================================================ */
+    @media (prefers-reduced-motion: reduce) {
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Custom cursor -->
+  <div id="cursor"></div>
+
+  <!-- WebGL ambient background -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- Zone navigation -->
+  <div id="zone-nav">
+    <div class="zone-dot active" data-zone="0"><span class="zone-dot-label">ENTRY</span><span
+        class="zone-dot-mark"></span></div>
+    <div class="zone-dot" data-zone="1"><span class="zone-dot-label">ORIGIN</span><span class="zone-dot-mark"></span>
+    </div>
+    <div class="zone-dot" data-zone="2"><span class="zone-dot-label">WORK</span><span class="zone-dot-mark"></span>
+    </div>
+    <div class="zone-dot" data-zone="3"><span class="zone-dot-label">CRAFT</span><span class="zone-dot-mark"></span>
+    </div>
+    <div class="zone-dot" data-zone="4"><span class="zone-dot-label">SIGNAL</span><span class="zone-dot-mark"></span>
+    </div>
+  </div>
+
+  <!-- Top Navigation -->
+  <div id="top-nav-container">
+    <span class="top-arrow" id="top-prev" onclick="handleNavClick(-1)">
+      <span class="arrow-ext">&lt;&lt;&lt;</span><span class="arrow-base">&lt;&lt;&lt;</span>
+    </span>
+    <span id="zone-label">// ENTRY</span>
+    <span class="top-arrow" id="top-next" onclick="handleNavClick(1)">
+      <span class="arrow-base">&gt;&gt;&gt;</span><span class="arrow-ext">&gt;&gt;&gt;</span>
+    </span>
+  </div>
+
+  <!-- ============================================================
+       THE WORLD
+  ============================================================ -->
+  <div id="world">
+
+    <!-- ① ENTRY -->
+    <section class="zone" id="zone-entry">
+      <div id="entry-crosshair">
+        <div id="line-v"></div>
+        <div id="line-h"></div>
+      </div>
+      <div id="entry-wordmark">
+        <span class="letter">B</span><span class="letter">A</span><span class="letter">R</span><span
+          class="letter">C</span><span class="letter">L</span><span class="letter">A</span><span
+          class="letter">Y</span><span class="letter">N</span><span class="letter">E</span><span class="letter">S</span>
+      </div>
+      <div id="entry-sub">// MUGABI WHYCLIFF — 2025</div>
+      <div id="enter-prompt" onclick="enterWorld()">[ ENTER ]</div>
+    </section>
+
+    <!-- ② ORIGIN -->
+    <section class="zone" id="zone-origin">
+      <div class="v-rule" style="left: 7vw;"></div>
+      <div class="origin-inner">
+        <div class="origin-left">
+          <p class="eyebrow fade-in-zone">// WHO I AM</p>
+          <h1 class="origin-name fade-in-zone">MUGABI<br />WHYCLIFF</h1>
+          <p class="origin-bio fade-in-zone">
+            First-year PCSE student at UICT Nakawa, Kampala.
+            I build systems that feel like architecture — precise,
+            functional, and never accidental. Frontend is where I
+            think. Backend is where I build. Design is where I see.
+            Faith holds it all.
+          </p>
+        </div>
+        <div class="origin-right">
+          <div class="meta-block fade-in-zone">
+            <span class="meta-label">// LOCATION</span>
+            <span class="meta-value">Kampala · Uganda</span>
+          </div>
+          <div class="meta-block fade-in-zone">
+            <span class="meta-label">// INSTITUTION</span>
+            <span class="meta-value">UICT Nakawa · Year 1 · PCSE · LAB 112</span>
+          </div>
+          <div class="meta-block fade-in-zone">
+            <span class="meta-label">// CURRENTLY</span>
+            <span class="meta-value">Internship period · Building</span>
+          </div>
+          <div class="meta-block fade-in-zone">
+            <span class="meta-label">// STATUS</span>
+            <div class="origin-status">
+              <span class="status-dot"></span>
+              Open to internships &amp; collaborations
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ③ WORK -->
+    <section class="zone" id="zone-work">
+      <div class="v-rule" style="left: 5.5vw;"></div>
+      <div class="work-inner">
+        <div class="work-header fade-in-zone">
+          <h2 class="section-title">The Work.</h2>
+          <div class="work-links">
+            <a href="https://github.com/Barclaynes-dev" target="_blank">GITHUB ↗</a>
+          </div>
+        </div>
+        <div class="project-list" id="project-list">
+          <!-- Projects injected by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ CRAFT -->
+    <section class="zone" id="zone-craft">
+      <div class="v-rule" style="left: 5.5vw;"></div>
+      <div class="craft-inner">
+        <div class="craft-header fade-in-zone">
+          <h2 class="section-title">The Craft.</h2>
+          <div class="work-links">
+            <span style="color:var(--parchment-dim); font-size:10px; letter-spacing:0.15em;">GRAPHIC DESIGN · VISUAL
+              RESEARCH</span>
+          </div>
+        </div>
+        <div class="craft-list" id="craft-list">
+          <!-- Craft projects injected by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ SIGNAL -->
+    <section class="zone" id="zone-signal">
+      <div class="v-rule" style="left: 5.5vw;"></div>
+      <div class="signal-inner">
+        <div class="signal-left">
+          <p class="signal-email-label fade-in-zone">// REACH OUT</p>
+          <a href="mailto:mugabiwhycliff@gmail.com" class="signal-email fade-in-zone">
+            mugabiwhycliff@gmail.com<span class="signal-cursor"></span>
+          </a>
+          <div class="signal-details">
+            <div class="signal-row fade-in-zone">
+              <span class="signal-row-label">// LOCATION</span>
+              <span class="signal-row-value">Nakawa Division, Kampala · Uganda</span>
+            </div>
+            <div class="signal-row fade-in-zone">
+              <span class="signal-row-label">// SCHOOL</span>
+              <span class="signal-row-value">UICT Nakawa · Year 1 PCSE · LAB 112</span>
+            </div>
+            <div class="signal-row fade-in-zone">
+              <span class="signal-row-label">// OPEN TO</span>
+              <span class="signal-row-value">Internships, freelance, collabs</span>
+            </div>
+          </div>
+        </div>
+        <div class="signal-right fade-in-zone">
+          <a href="https://github.com/Barclaynes-dev" target="_blank" class="signal-link">GITHUB</a>
+          <a href="https://www.linkedin.com/in/mugabi-whycliff" target="_blank" class="signal-link">LINKEDIN</a>
+          <a href="https://barclaynes-dev.github.io/Renare/" target="_blank" class="signal-link">RENARE — CREATIVE
+            LAB</a>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /#world -->
+
+  <!-- ============================================================
+       CRAFT DRAWER — slides in from bottom
+  ============================================================ -->
+  <div id="craft-drawer">
+    <div id="craft-drawer-header">
+      <button id="craft-drawer-back">← BACK</button>
+      <span id="craft-drawer-title">The Craft.</span>
+      <span id="craft-drawer-count"></span>
+    </div>
+    <div id="craft-drawer-toolbar">
+      <div id="craft-search-wrap">
+        <input id="craft-search" type="text" placeholder="SEARCH — flier, ID, certificate..." autocomplete="off" spellcheck="false" />
+        <button id="craft-search-clear" aria-label="Clear search">×</button>
+      </div>
+      <div class="craft-filter-pills" id="craft-filter-pills">
+        <button class="filter-pill active" data-cat="all">ALL</button>
+        <button class="filter-pill" data-cat="fliers">FLIERS</button>
+        <button class="filter-pill" data-cat="documents">DOCUMENTS</button>
+        <button class="filter-pill" data-cat="assets">ASSETS</button>
+        <button class="filter-pill" data-cat="food">FOOD</button>
+      </div>
+    </div>
+    <div id="craft-drawer-body">
+      <div class="craft-drawer-grid" id="craft-drawer-grid">
+        <!-- Populated by JS -->
+      </div>
+      <div class="drawer-no-results" id="craft-no-results">
+        <div class="drawer-no-results-icon">∅</div>
+        <p class="drawer-no-results-title">No pieces found.</p>
+        <p class="drawer-no-results-sub">TRY A DIFFERENT KEYWORD OR CATEGORY</p>
+      </div>
+    </div>
+  </div>
+
+
+  <script>
+    /* ============================================================
+       DATA — edit this to add/remove projects
+    ============================================================ */
+    const projects = [
+      {
+        title: "Student Attendance Management System",
+        desc: "QR-based attendance for UICT. Three roles: Student, Lecturer, Admin.",
+        tags: ["ASP.NET Core", "C#", "MySQL", "Razor"],
+        href: "https://github.com/Barclaynes-dev",
+        type: "dev"
+      },
+      {
+        title: "CampusBite",
+        desc: "Campus food ordering PWA with SignalR real-time updates and Yo! Uganda mobile money.",
+        tags: ["ASP.NET Core", "SignalR", "PWA", "MySQL"],
+        href: "https://github.com/Barclaynes-dev",
+        type: "dev"
+      },
+      {
+        title: "Haylo Hotel Management System",
+        desc: "Full admin dashboard with Chart.js analytics, dynamic booking calendar and live stat cards.",
+        tags: ["Vanilla JS", "ASP.NET", "Chart.js"],
+        href: "https://github.com/Barclaynes-dev",
+        type: "dev"
+      },
+      {
+        title: "LAB 112 PCSE Student Portal",
+        desc: "Live PWA for UICT classmates — PDF library, coursework calendar, C# notes.",
+        tags: ["PWA", "PDF.js", "Service Worker"],
+        href: "https://lab112-uict.github.io",
+        type: "dev"
+      },
+      {
+        title: "UniScroll",
+        desc: "Campus social marketplace PWA — planned and architected with full build document.",
+        tags: ["ASP.NET Core", "PWA", "MySQL"],
+        href: "https://github.com/Barclaynes-dev",
+        type: "dev"
+      },
+      {
+        title: "RENARE — Creative Lab",
+        desc: "Experimental UI showroom. Cinematic frontend, Three.js, motion design.",
+        tags: ["Three.js", "GSAP", "GLSL"],
+        href: "https://barclaynes-dev.github.io/Renare/",
+        type: "renare"
+      },
+      {
+        title: "FinDash",
+        desc: "Financial dashboard interface with complex data visualization and real-time socket connections.",
+        tags: ["React", "D3.js", "TailwindCSS"],
+        href: "https://github.com/Barclaynes-dev",
+        type: "dev"
+      },
+      {
+        title: "Echo Notes",
+        desc: "Minimalist markdown note-taking app with local-first architecture and sync capabilities.",
+        tags: ["Vue.js", "IndexedDB", "Node.js"],
+        href: "https://github.com/Barclaynes-dev",
+        type: "dev"
+      }
+    ];
+
+    const craftPieces = [
+      {
+        title: "Business Expo Flier",
+        eyebrow: "// 01",
+        category: "fliers",
+        keywords: ["flier", "business", "expo", "corporate", "editorial", "yellow", "bold", "poster", "advertising", "typography"],
+        intent: "A grid-based editorial layout designed to project corporate authority. The composition contrasts rigid architectural grids with human-centric monochrome photography, utilizing a striking yellow color-block strategy to guide the viewer's eye through the bold typographic hierarchy.",
+        image: "Photoshop_images/Business_Flier.jpg",
+        palette: ["#F5B301", "#0A0A0A", "#FFFFFF", "#4A4A4A"],
+        fonts: [
+          { name: "Bebas Neue", style: "font-family: 'Bebas Neue', sans-serif; font-weight: 400; text-transform: uppercase; letter-spacing: 1px;" },
+          { name: "Helvetica", style: "font-family: 'Helvetica', sans-serif; font-weight: 700;" }
+        ],
+        psdLink: "https://raw.githubusercontent.com/Barclaynes-dev/Graphics-Design/main/01_Production/Business%20flier.psd",
+        psdSize: "16.6 MB"
+      },
+      {
+        title: "UICT Student ID Card",
+        eyebrow: "// 02",
+        category: "documents",
+        keywords: ["ID", "card", "identity", "document", "institutional", "UICT", "university", "student", "formal", "official"],
+        intent: "An institutional identity card design for the Uganda Institute of Information and Communications Technology. The layout focuses on maximum legibility, strict typographic hierarchy, and formal alignment, integrating official brand colors with essential security elements like the rear barcode.",
+        images: [
+          "Photoshop_images/UICT_FrontSide_ID.jpg",
+          "Photoshop_images/UICT_BackSide_ID.jpg"
+        ],
+        palette: ["#FFFFFF", "#000000", "#FF0000", "#15719B"],
+        fonts: [{ name: "Times New Roman", style: "font-family: 'Times New Roman', serif; font-weight: 700;" }],
+        psdLink: "https://raw.githubusercontent.com/Barclaynes-dev/Graphics-Design/main/01_Production/UICT%20ID%20%28Front%20and%20Back%29.psd",
+        psdSize: "3.93 MB"
+      },
+      {
+        title: "Premium Certificate — Voguelash",
+        eyebrow: "// 03",
+        category: "documents",
+        keywords: ["certificate", "document", "premium", "luxury", "beauty", "academy", "gold", "elegant", "formal", "official", "Voguelash"],
+        intent: "A luxury certification document for Voguelash Beauty Academy. The design weaponizes deep emerald green as a commanding, premium backdrop, contrasting elegantly with warm gold typography to communicate prestige and trust. Wide-tracked uppercase headers pair with a flowing script signature typeface, creating a balance between institutional authority and refined elegance.",
+        image: "Photoshop_images/Certificate_Premium.jpg",
+        palette: ["#1A5C3A", "#C9A84C", "#FFFFFF", "#0E3D26"],
+        fonts: [
+          { name: "Cinzel", style: "font-family: 'Cinzel', serif; font-size: 18px; letter-spacing: 0.4em; text-transform: uppercase; color: #C9A84C;" },
+          { name: "Brittany Signature", style: "font-family: cursive; font-size: 24px; color: #C9A84C; font-style: italic;" },
+          { name: "Inter", style: "font-family: 'Inter', sans-serif; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase;" }
+        ],
+        psdLink: "https://raw.githubusercontent.com/Barclaynes-dev/Graphics-Design/main/01_Production/Certificate%20Premium.psd",
+        psdSize: "60.4 MB"
+      },
+      /* 
+       * ==========================================
+       * TO ADD A NEW ADOBE PHOTOSHOP PROJECT:
+       * Edit the details below for your 4th project.
+       * Set category to: "fliers", "documents", "assets", or "food"
+       * Add relevant keywords for search discoverability
+       * ==========================================
+       */
+      {
+        title: "Photoshop Compositing",
+        eyebrow: "// 04",
+        category: "assets",
+        keywords: ["compositing", "photoshop", "matte", "painting", "surreal", "lighting", "asset", "visual", "advanced"],
+        intent: "An advanced Adobe Photoshop composition focused on surreal lighting and matte painting techniques.",
+        image: "",
+        palette: ["#2C3E50", "#E74C3C", "#ECF0F1", "#34495E"],
+        fonts: [{ name: "Montserrat", style: "font-family: 'Montserrat', sans-serif;" }],
+        psdLink: "https://github.com/Barclaynes-dev" // Place your GitHub PSD link here
+      }
+    ];
+
+    const zoneLabels = ["// ENTRY", "// ORIGIN", "// WORK", "// CRAFT", "// SIGNAL"];
+
+    /* ============================================================
+       STATE
+    ============================================================ */
+    let currentZone = 0;
+    let isAnimating = false;
+    let craftIndex = 0;
+    let worldEntered = false;
+
+    /* ============================================================
+       BUILD PROJECT LIST
+    ============================================================ */
+    function buildProjects() {
+      const list = document.getElementById("project-list");
+      projects.forEach((p, i) => {
+        const a = document.createElement("a");
+        a.href = p.href;
+        a.target = "_blank";
+        a.className = "project-entry" + (p.type === "renare" ? " renare-entry" : "");
+        a.innerHTML = `
+        <span class="project-num">0${i + 1}</span>
+        <div class="project-info">
+          <span class="project-title">
+            ${p.title}
+            ${p.type === "renare" ? '<span class="renare-badge">CREATIVE LAB</span>' : ''}
+          </span>
+          <span class="project-desc">${p.desc}</span>
+        </div>
+        <div class="project-tags">
+          ${p.tags.map(t => `<span class="tag">${t}</span>`).join("")}
+        </div>
+      `;
+        list.appendChild(a);
+      });
+    }
+
+    /* ============================================================
+       BUILD CRAFT LIST
+    ============================================================ */
+    function buildCrafts() {
+      const list = document.getElementById("craft-list");
+      craftPieces.forEach((piece) => {
+        const item = document.createElement("div");
+        item.className = "craft-item fade-in-zone";
+        
+        let fontsHtml = '<p class="font-label">// TYPEFACES USED</p>';
+        if (piece.fonts && piece.fonts.length) {
+          piece.fonts.forEach(f => {
+            fontsHtml += `<div class="font-display" style="${f.style}">${f.name}</div>`;
+          });
+        } else {
+          fontsHtml += `<div class="font-display" style="color:var(--parchment-dim); font-size:11px;">To be revealed with the piece</div>`;
+        }
+
+        const paletteHtml = piece.palette.map(hex => 
+          `<div class="palette-swatch" style="background:${hex};" data-hex="${hex}"></div>`
+        ).join("");
+
+        const imagesToRender = piece.images ? piece.images : (piece.image ? [piece.image] : []);
+        
+        let imgHtml = '';
+        if (imagesToRender.length > 0) {
+          imagesToRender.forEach(imgSrc => {
+            imgHtml += `
+              <div class="craft-img-wrap">
+                <img src="${imgSrc}" alt="${piece.title}" style="display:block; opacity:1; transform:none;" />
+              </div>
+            `;
+          });
+        } else {
+          imgHtml = `
+            <div class="craft-img-wrap">
+              <div class="craft-placeholder">// DESIGN WORK<br />COMING SOON</div>
+            </div>
+          `;
+        }
+
+        item.innerHTML = `
+          <div class="craft-visual">
+            ${imgHtml}
+          </div>
+          <div class="craft-meta">
+            <div>
+              <p class="eyebrow">${piece.eyebrow}</p>
+              <h3 class="craft-title">${piece.title}</h3>
+            </div>
+            <p class="craft-intent">${piece.intent}</p>
+            <div>
+              <p class="font-label">// PALETTE</p>
+              <div class="palette-strip" style="margin-top: 1.5rem; margin-bottom: 2rem;">
+                ${paletteHtml}
+              </div>
+            </div>
+            <div class="font-showcase">
+              ${fontsHtml}
+            </div>
+            <div style="margin-top: 2rem; display: flex; align-items: center; gap: 1.2rem;">
+              <a href="${piece.psdLink}" target="_blank" class="craft-psd-link">DOWNLOAD PSD FILE ↗</a>
+              ${piece.psdSize ? `<span style="font-size: 9px; letter-spacing: 0.2em; color: var(--parchment-dim); border: 1px solid rgba(237,232,223,0.15); padding: 2px 8px;">${piece.psdSize}</span>` : ''}
+            </div>
+          </div>
+        `;
+        list.appendChild(item);
+      });
+      
+      const viewMore = document.createElement("div");
+      viewMore.style.textAlign = "center";
+      viewMore.style.marginTop = "2rem";
+      viewMore.innerHTML = `<button class="view-more-btn" id="craft-view-more">VIEW MORE PROJECTS</button>`;
+      list.appendChild(viewMore);
+
+      // Wire up drawer open
+      viewMore.querySelector("#craft-view-more").addEventListener("click", openCraftDrawer);
+    }
+
+    /* ============================================================
+       CRAFT DRAWER LOGIC
+    ============================================================ */
+    let drawerBuilt = false;
+    let activeCategory = "all";
+    let activeQuery = "";
+
+    function buildDrawerGrid() {
+      if (drawerBuilt) return;
+      drawerBuilt = true;
+
+      const grid = document.getElementById("craft-drawer-grid");
+      const count = document.getElementById("craft-drawer-count");
+      count.textContent = `// ${craftPieces.length} PIECES`;
+
+      craftPieces.forEach((piece, idx) => {
+        const card = document.createElement("div");
+        card.className = "drawer-craft-card";
+        // Store searchable data on the element
+        card.dataset.category = piece.category || "assets";
+        card.dataset.search = [
+          piece.title,
+          piece.intent,
+          ...(piece.keywords || [])
+        ].join(" ").toLowerCase();
+
+        // Primary image (first image or single)
+        const imgSrcs = piece.images ? piece.images : (piece.image ? [piece.image] : []);
+        const primaryImg = imgSrcs[0] || "";
+
+        let imgHtml;
+        if (primaryImg) {
+          imgHtml = `<img src="${primaryImg}" alt="${piece.title}" loading="lazy" />`;
+        } else {
+          imgHtml = `<div class="craft-placeholder">// DESIGN WORK<br />COMING SOON</div>`;
+        }
+
+        const paletteHtml = (piece.palette || []).map(hex =>
+          `<span style="background:${hex};"></span>`
+        ).join("");
+
+        card.innerHTML = `
+          <div class="drawer-craft-img">
+            ${imgHtml}
+          </div>
+          <div class="drawer-craft-meta">
+            <span class="drawer-craft-eyebrow">${piece.eyebrow}</span>
+            <span class="drawer-craft-title">${piece.title}</span>
+            <div class="drawer-craft-palette">${paletteHtml}</div>
+            <p class="drawer-craft-intent">${piece.intent}</p>
+            <a href="${piece.psdLink}" target="_blank" class="drawer-craft-link">DOWNLOAD PSD ↗</a>
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+
+      // Re-init cursor hover for new elements
+      const cur = document.getElementById("cursor");
+      if (cur) {
+        grid.querySelectorAll("a, button, .drawer-craft-card").forEach(el => {
+          el.addEventListener("mouseenter", () => cur.classList.add("expand"));
+          el.addEventListener("mouseleave", () => cur.classList.remove("expand"));
+        });
+      }
+
+      // Wire up search input
+      const searchInput = document.getElementById("craft-search");
+      const clearBtn = document.getElementById("craft-search-clear");
+
+      searchInput.addEventListener("input", () => {
+        activeQuery = searchInput.value.trim().toLowerCase();
+        clearBtn.classList.toggle("visible", activeQuery.length > 0);
+        applyDrawerFilter();
+      });
+
+      clearBtn.addEventListener("click", () => {
+        searchInput.value = "";
+        activeQuery = "";
+        clearBtn.classList.remove("visible");
+        applyDrawerFilter();
+        searchInput.focus();
+      });
+
+      // Wire up category pills
+      document.querySelectorAll(".filter-pill").forEach(pill => {
+        pill.addEventListener("click", () => {
+          document.querySelectorAll(".filter-pill").forEach(p => p.classList.remove("active"));
+          pill.classList.add("active");
+          activeCategory = pill.dataset.cat;
+          applyDrawerFilter();
+        });
+      });
+    }
+
+    function applyDrawerFilter() {
+      const cards = document.querySelectorAll(".drawer-craft-card");
+      const noResults = document.getElementById("craft-no-results");
+      const count = document.getElementById("craft-drawer-count");
+      let visible = 0;
+
+      cards.forEach(card => {
+        const catMatch = activeCategory === "all" || card.dataset.category === activeCategory;
+        const queryMatch = !activeQuery || card.dataset.search.includes(activeQuery);
+        const show = catMatch && queryMatch;
+
+        if (show) {
+          card.style.display = "flex";
+          visible++;
+        } else {
+          card.style.display = "none";
+        }
+      });
+
+      // Update piece count
+      count.textContent = `// ${visible} PIECE${visible !== 1 ? 'S' : ''}`;
+
+      // Toggle no-results state
+      noResults.classList.toggle("visible", visible === 0);
+    }
+
+    function openCraftDrawer() {
+      buildDrawerGrid();
+      const drawer = document.getElementById("craft-drawer");
+      drawer.style.display = "flex";
+      gsap.fromTo(drawer,
+        { y: "100%" },
+        { y: "0%", duration: 0.65, ease: "power3.out" }
+      );
+      // Reset filter state to ALL on each open
+      activeCategory = "all";
+      activeQuery = "";
+      const searchInput = document.getElementById("craft-search");
+      if (searchInput) {
+        searchInput.value = "";
+        document.getElementById("craft-search-clear").classList.remove("visible");
+      }
+      document.querySelectorAll(".filter-pill").forEach(p => p.classList.remove("active"));
+      const allPill = document.querySelector(".filter-pill[data-cat='all']");
+      if (allPill) allPill.classList.add("active");
+      applyDrawerFilter();
+      // Scroll body to top
+      document.getElementById("craft-drawer-body").scrollTop = 0;
+    }
+
+    function closeCraftDrawer() {
+      const drawer = document.getElementById("craft-drawer");
+      gsap.to(drawer, {
+        y: "100%",
+        duration: 0.55,
+        ease: "power3.in",
+        onComplete: () => { drawer.style.display = "none"; }
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("craft-drawer-back").addEventListener("click", closeCraftDrawer);
+      // Also close on Escape key
+      window.addEventListener("keydown", e => {
+        if (e.key === "Escape") {
+          const drawer = document.getElementById("craft-drawer");
+          if (drawer && drawer.style.display === "flex") closeCraftDrawer();
+        }
+      });
+    });
+
+    /* ============================================================
+       ZONE NAVIGATION
+    ============================================================ */
+    function goToZone(index) {
+      if (isAnimating || index === currentZone || !worldEntered) return;
+      if (index < 0 || index > 4) return;
+
+      isAnimating = true;
+      const prev = currentZone;
+      currentZone = index;
+
+      // Update dots & label
+      document.querySelectorAll(".zone-dot").forEach((d, i) => {
+        d.classList.toggle("active", i === index);
+      });
+      document.getElementById("zone-label").textContent = zoneLabels[index];
+
+      // Update arrows visibility
+      const tPrev = document.getElementById("top-prev");
+      const tNext = document.getElementById("top-next");
+      tPrev.style.opacity = index > 0 ? "1" : "0";
+      tPrev.style.pointerEvents = index > 0 ? "auto" : "none";
+      tNext.style.opacity = index < 4 ? "1" : "0";
+      tNext.style.pointerEvents = index < 4 ? "auto" : "none";
+
+      // Slide world
+      gsap.to("#world", {
+        x: -(index * 100) + "vw",
+        duration: 1,
+        ease: "power3.inOut",
+        onComplete: () => {
+          isAnimating = false;
+          animateZoneIn(index);
+        }
+      });
+    }
+
+    function handleNavClick(dir) {
+      const el = dir === 1 ? document.getElementById("top-next") : document.getElementById("top-prev");
+      if (!el || el.style.opacity === "0") return;
+
+      el.classList.add("expanded");
+      setTimeout(() => {
+        el.classList.remove("expanded");
+      }, 600);
+
+      navigateZone(dir);
+    }
+
+    function navigateZone(dir) {
+      goToZone(currentZone + dir);
+    }
+
+    /* ============================================================
+       ZONE IN ANIMATION
+    ============================================================ */
+    function animateZoneIn(zoneIndex) {
+      const zones = ["zone-entry", "zone-origin", "zone-work", "zone-craft", "zone-signal"];
+      const section = document.getElementById(zones[zoneIndex]);
+
+      if (section.dataset.animated) return;
+      section.dataset.animated = "true";
+
+      const items = section.querySelectorAll(".fade-in-zone");
+      gsap.fromTo(items,
+        { opacity: 0, y: 28 },
+        { opacity: 1, y: 0, duration: 0.7, stagger: 0.1, ease: "power2.out" }
+      );
+    }
+
+    /* ============================================================
+       ENTRY SEQUENCE
+    ============================================================ */
+    function runEntrySequence() {
+      const tl = gsap.timeline();
+
+      // 1. Vertical line draws down
+      tl.to("#line-v", { height: "45vh", duration: 1.2, ease: "power2.inOut" }, 0.6)
+
+        // 2. Horizontal line shoots out
+        .to("#line-h", {
+          width: "100vw",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          duration: 0.6,
+          ease: "power3.out"
+        }, "-=0.1")
+
+        // 3. Lines fade
+        .to(["#line-v", "#line-h"], { opacity: 0, duration: 0.5, ease: "power1.in" }, "+=0.4")
+
+        // 4. Wordmark materializes — letters stagger from outside in
+        .set("#entry-wordmark", { opacity: 1 })
+        .fromTo(".letter",
+          { opacity: 0, y: 22 },
+          {
+            opacity: 1, y: 0,
+            duration: 0.6,
+            stagger: { each: 0.06, from: "center" },
+            ease: "power3.out"
+          }, "-=0.3")
+
+        // 5. Subtitle
+        .to("#entry-sub", { opacity: 1, duration: 0.5 }, "-=0.1")
+
+        // 6. Enter prompt
+        .to("#enter-prompt", { opacity: 1, duration: 0.6, ease: "power2.out" }, "+=0.3");
+    }
+
+    /* ============================================================
+       ENTER WORLD
+    ============================================================ */
+    function enterWorld() {
+      if (worldEntered) return;
+      worldEntered = true;
+
+      gsap.to(["#entry-wordmark", "#entry-sub", "#enter-prompt", "#line-v", "#line-h"], {
+        opacity: 0,
+        y: -20,
+        duration: 0.5,
+        ease: "power2.in",
+        onComplete: () => {
+          // Show UI chrome
+          gsap.to(["#zone-nav", "#top-nav-container"], {
+            opacity: 1,
+            duration: 0.6,
+            ease: "power2.out"
+          });
+          document.getElementById("top-prev").style.opacity = "0";
+          document.getElementById("top-prev").style.pointerEvents = "none";
+          // Go to Origin
+          currentZone = -1;
+          goToZone(1);
+        }
+      });
+    }
+
+    /* ============================================================
+       AMBIENT WEBGL SHADER
+    ============================================================ */
+    function initShader() {
+      const canvas = document.getElementById("bg-canvas");
+      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+      const geo = new THREE.PlaneGeometry(2, 2);
+
+      const mat = new THREE.ShaderMaterial({
+        uniforms: {
+          uTime: { value: 0 },
+          uZone: { value: 0 },
+          uRes: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+        },
+        vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = vec4(position, 1.0);
+        }
+      `,
+        fragmentShader: `
+        uniform float uTime;
+        uniform float uZone;
+        uniform vec2  uRes;
+        varying vec2  vUv;
+
+        float noise(vec2 p) {
+          return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+        }
+
+        float smoothNoise(vec2 p) {
+          vec2 i = floor(p);
+          vec2 f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+          float a = noise(i);
+          float b = noise(i + vec2(1.0, 0.0));
+          float c = noise(i + vec2(0.0, 1.0));
+          float d = noise(i + vec2(1.0, 1.0));
+          return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+        }
+
+        void main() {
+          vec2 uv = vUv;
+
+          // Slow drifting noise
+          float speed = 0.08 + uZone * 0.04;
+          float n = smoothNoise(uv * 2.5 + vec2(uTime * speed, uTime * speed * 0.6));
+          n = n * 0.5 + smoothNoise(uv * 5.0 - vec2(uTime * 0.05)) * 0.5;
+
+          // Amber glow — single light source
+          vec2 lightPos = vec2(0.5 + sin(uTime * 0.15) * 0.08, 0.42 + cos(uTime * 0.1) * 0.05);
+          float dist = distance(uv, lightPos);
+          float glow = 0.018 / (dist + 0.01);
+          glow *= (1.0 - uZone * 0.15);
+
+          // Base near-black with slight warm tone
+          vec3 base  = vec3(0.032, 0.028, 0.024);
+          vec3 amber = vec3(0.878, 0.486, 0.184);
+
+          // Noise adds very subtle texture variation
+          vec3 col = base + n * 0.012;
+          col += amber * glow * 0.35;
+
+          // Vignette
+          float vig = 1.0 - smoothstep(0.4, 1.2, dist * 1.5);
+          col *= vig;
+
+          gl_FragColor = vec4(col, 1.0);
+        }
+      `,
+        transparent: false
+      });
+
+      const mesh = new THREE.Mesh(geo, mat);
+      scene.add(mesh);
+
+      window.addEventListener("resize", () => {
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        mat.uniforms.uRes.value.set(window.innerWidth, window.innerHeight);
+      });
+
+      // Expose zone update
+      window._shaderMat = mat;
+
+      (function tick(t) {
+        mat.uniforms.uTime.value = t * 0.001;
+        renderer.render(scene, camera);
+        requestAnimationFrame(tick);
+      })(0);
+    }
+
+    /* ============================================================
+       CURSOR
+    ============================================================ */
+    function initCursor() {
+      const cur = document.getElementById("cursor");
+      window.addEventListener("mousemove", e => {
+        gsap.to(cur, { x: e.clientX, y: e.clientY, duration: 0.15, ease: "power1.out" });
+      });
+      document.querySelectorAll("a, button, .zone-dot, #enter-prompt, .top-arrow, .craft-btn")
+        .forEach(el => {
+          el.addEventListener("mouseenter", () => cur.classList.add("expand"));
+          el.addEventListener("mouseleave", () => cur.classList.remove("expand"));
+        });
+    }
+
+    /* ============================================================
+       KEYBOARD NAVIGATION
+    ============================================================ */
+    function initKeyboard() {
+      window.addEventListener("keydown", e => {
+        if (!worldEntered) {
+          if (e.key === "Enter" || e.key === " ") enterWorld();
+          return;
+        }
+        if (e.key === "ArrowRight") handleNavClick(1);
+        if (e.key === "ArrowLeft") handleNavClick(-1);
+      });
+    }
+
+    /* ============================================================
+       ZONE DOT CLICKS
+    ============================================================ */
+    function initDots() {
+      document.querySelectorAll(".zone-dot").forEach(dot => {
+        dot.addEventListener("click", () => goToZone(+dot.dataset.zone));
+      });
+    }
+
+    /* ============================================================
+       TOUCH / SWIPE
+    ============================================================ */
+    function initSwipe() {
+      let startX = 0;
+      document.addEventListener("touchstart", e => { startX = e.touches[0].clientX; });
+      document.addEventListener("touchend", e => {
+        const diff = startX - e.changedTouches[0].clientX;
+        if (Math.abs(diff) > 50) navigateZone(diff > 0 ? 1 : -1);
+      });
+    }
+
+    /* ============================================================
+       SHADER ZONE SYNC
+    ============================================================ */
+    function syncShaderToZone(z) {
+      if (!window._shaderMat) return;
+      gsap.to(window._shaderMat.uniforms.uZone, { value: z * 0.25, duration: 1.2, ease: "power2.inOut" });
+    }
+
+    // Patch goToZone to sync shader
+    const _origGoToZone = goToZone;
+    goToZone = function (index) {
+      syncShaderToZone(index);
+      _origGoToZone(index);
+    };
+
+    /* ============================================================
+       INIT
+    ============================================================ */
+    window.addEventListener("DOMContentLoaded", () => {
+      buildProjects();
+      buildCrafts();
+      initShader();
+      initCursor();
+      initKeyboard();
+      initDots();
+      initSwipe();
+
+      // Keep nav arrows hidden until world entered handled by #top-nav-container opacity
+
+      // Run entry after brief pause
+      setTimeout(runEntrySequence, 400);
+    });
+  </script>
+</body>
+
+</html>
