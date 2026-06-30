@@ -54,7 +54,23 @@
       background: var(--black);
       color: var(--parchment);
       font-family: var(--mono);
-      cursor: none;
+      /* Orange arrow SVG cursor for desktop */
+      cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5 3l14 9-7 1-4 7z' fill='%23E07B2F' stroke='%23080808' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E") 5 3, auto;
+    }
+
+    a, button, [role="button"], .zone-dot, .top-arrow, .filter-pill, .view-more-btn,
+    .craft-btn, .project-entry, #enter-prompt, .drawer-craft-card {
+      cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5 3l14 9-7 1-4 7z' fill='%23E07B2F' stroke='%23080808' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E") 5 3, pointer;
+    }
+
+    /* Hide custom cursor on touch / mobile devices */
+    @media (pointer: coarse), (max-width: 768px) {
+      html, body {
+        cursor: auto;
+      }
+      #cursor {
+        display: none !important;
+      }
     }
 
     ::selection {
@@ -63,25 +79,10 @@
     }
 
     /* ============================================================
-       CUSTOM CURSOR
+       CUSTOM CURSOR — disabled, using SVG pointer only
     ============================================================ */
     #cursor {
-      position: fixed;
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-      background: var(--amber);
-      pointer-events: none;
-      z-index: 9999;
-      transform: translate(-50%, -50%);
-      transition: width 0.25s ease, height 0.25s ease, opacity 0.25s ease;
-    }
-
-    #cursor.expand {
-      width: 28px;
-      height: 28px;
-      opacity: 0.25;
-      background: var(--amber);
+      display: none !important;
     }
 
     /* ============================================================
@@ -786,13 +787,18 @@
       color: var(--parchment-dim);
       text-decoration: none;
       border-bottom: 1px solid rgba(237, 232, 223, 0.2);
-      padding-bottom: 2px;
-      transition: color 0.3s ease, border-color 0.3s ease;
+      /* Larger hit area — padding on all sides so the whole zone activates */
+      padding: 8px 12px;
+      margin: -8px -12px;
+      display: inline-block;
+      transition: color 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+      border-radius: 2px;
     }
 
     .craft-psd-link:hover {
       color: var(--amber);
       border-color: var(--amber);
+      background: rgba(224, 123, 47, 0.07);
     }
 
     .view-more-btn {
@@ -1146,14 +1152,18 @@
       color: var(--parchment-dim);
       text-decoration: none;
       border-bottom: 1px solid rgba(237, 232, 223, 0.2);
-      padding-bottom: 2px;
+      /* Generous hit padding so mouse doesn't have to land on the thin underline */
+      padding: 7px 10px;
+      margin-left: -10px;
       display: inline-block;
-      transition: color 0.3s ease, border-color 0.3s ease;
+      transition: color 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+      border-radius: 2px;
     }
 
     .drawer-craft-link:hover {
       color: var(--amber);
       border-color: var(--amber);
+      background: rgba(224, 123, 47, 0.07);
     }
 
     @media (max-width: 1024px) {
@@ -2226,15 +2236,7 @@
        CURSOR
     ============================================================ */
     function initCursor() {
-      const cur = document.getElementById("cursor");
-      window.addEventListener("mousemove", e => {
-        gsap.to(cur, { x: e.clientX, y: e.clientY, duration: 0.15, ease: "power1.out" });
-      });
-      document.querySelectorAll("a, button, .zone-dot, #enter-prompt, .top-arrow, .craft-btn")
-        .forEach(el => {
-          el.addEventListener("mouseenter", () => cur.classList.add("expand"));
-          el.addEventListener("mouseleave", () => cur.classList.remove("expand"));
-        });
+      // Custom ring cursor removed — orange SVG pointer handles everything via CSS.
     }
 
     /* ============================================================
