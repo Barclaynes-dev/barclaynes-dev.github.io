@@ -1712,6 +1712,21 @@
         ],
         psdLink: "https://raw.githubusercontent.com/Barclaynes-dev/Graphics-Design/main/01_Production/Oreo%20Poster.psd",
         psdSize: "21.3 MB"
+      },
+      {
+        title: "Wedding Invitation Card",
+        eyebrow: "// 05",
+        category: "documents",
+        keywords: ["wedding", "invitation", "card", "elegant", "gold", "floral", "minimalist", "typography", "calibri", "high spirited"],
+        intent: "A premium, elegant wedding invitation card designed with a striking dark mode aesthetic. The deep black canvas is enriched with delicate, hand-drawn golden botanical illustrations framing the elegant typography. The layout beautifully pairs a flowing, expressive script typeface for the names with a clean, structured sans-serif for the event details, achieving a sophisticated balance between modern minimalism and classic romance.",
+        image: "Photoshop_images/Wedding_Invitation_card.jpg",
+        palette: ["#000000", "#D4AF37", "#EDE8DF", "#1A1A1A"],
+        fonts: [
+          { name: "High Spirited", style: "font-family: 'High Spirited', cursive; font-size: 24px; font-style: italic; color: #D4AF37;" },
+          { name: "Calibri", style: "font-family: 'Calibri', sans-serif; font-weight: 700; letter-spacing: 0.1em; color: #EDE8DF;" }
+        ],
+        psdLink: "https://raw.githubusercontent.com/Barclaynes-dev/Graphics-Design/main/01_Production/Wedding_Invitation.psd",
+        psdSize: "7.51 MB"
       }
     ];
 
@@ -1757,7 +1772,7 @@
     ============================================================ */
     function buildCrafts() {
       const list = document.getElementById("craft-list");
-      craftPieces.forEach((piece) => {
+      craftPieces.slice(0, 4).forEach((piece) => {
         const item = document.createElement("div");
         item.className = "craft-item fade-in-zone";
         
