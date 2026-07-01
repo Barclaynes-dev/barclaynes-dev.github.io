@@ -283,24 +283,26 @@
       transform: translate(-50%, -50%);
     }
 
-    #line-v {
+    #line-top {
       position: absolute;
       left: 50%;
-      top: -45vh;
+      top: 0;
       width: 1px;
-      height: 0;
-      background: linear-gradient(to bottom, transparent, var(--amber) 60%, transparent);
-      transform: translateX(-50%);
+      height: 50vh;
+      background: linear-gradient(to bottom, transparent, var(--amber));
+      transform: translateX(-50%) scaleY(0);
+      transform-origin: top;
     }
 
-    #line-h {
+    #line-bottom {
       position: absolute;
-      top: 50%;
-      left: 0;
-      width: 0;
-      height: 1px;
-      background: linear-gradient(to right, transparent, var(--amber), transparent);
-      transform: translate(-50vw, -50%);
+      left: 50%;
+      bottom: 0;
+      width: 1px;
+      height: 50vh;
+      background: linear-gradient(to top, transparent, var(--amber));
+      transform: translateX(-50%) scaleY(0);
+      transform-origin: bottom;
     }
 
     #entry-wordmark {
@@ -1046,23 +1048,27 @@
       border-radius: 4px;
     }
 
+    /* BASE MASONRY GRID (DEFAULT TO 4 COLUMNS ON DESKTOP) */
     .craft-drawer-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 2.5rem 2rem;
+      display: block;
+      column-count: 4;
+      column-gap: 2rem;
     }
 
     .drawer-craft-card {
-      display: flex;
+      break-inside: avoid;
+      margin-bottom: 2.5rem;
+      display: inline-flex;
       flex-direction: column;
       gap: 1.2rem;
       cursor: pointer;
       position: relative;
+      width: 100%;
     }
 
     .drawer-craft-img {
       width: 100%;
-      aspect-ratio: 4 / 3;
+      height: auto;
       background: rgba(237, 232, 223, 0.04);
       border: 1px solid rgba(237, 232, 223, 0.1);
       overflow: hidden;
@@ -1079,8 +1085,8 @@
 
     .drawer-craft-img img {
       width: 100%;
-      height: 100%;
-      object-fit: cover;
+      height: auto;
+      object-fit: contain;
       display: block;
       transition: transform 0.5s ease;
     }
@@ -1094,6 +1100,7 @@
       letter-spacing: 0.25em;
       color: var(--parchment-dim);
       text-align: center;
+      padding: 2rem;
     }
 
     .drawer-craft-meta {
@@ -1138,10 +1145,6 @@
       font-size: 10px;
       line-height: 1.7;
       color: var(--parchment-dim);
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
       margin-top: 0.2rem;
     }
 
@@ -1166,22 +1169,69 @@
       background: rgba(224, 123, 47, 0.07);
     }
 
+    /* Floating Tooltip */
+    .psd-tooltip {
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      background: rgba(8, 8, 8, 0.9);
+      border: 1px solid var(--amber);
+      color: var(--parchment);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      padding: 6px 12px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+      opacity: 0;
+      transform: translate(-50%, -100%) scale(0.9);
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      white-space: nowrap;
+      margin-top: -15px;
+    }
+    .psd-tooltip.visible {
+      opacity: 1;
+      transform: translate(-50%, -100%) scale(1);
+    }
+
     @media (max-width: 1024px) {
       .craft-drawer-grid {
-        grid-template-columns: repeat(3, 1fr);
+        column-count: 3;
+        column-gap: 1.8rem;
       }
     }
 
     @media (max-width: 768px) {
       .craft-drawer-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1.8rem 1.2rem;
+        column-count: 2;
+        column-gap: 1.5rem;
+      }
+      .drawer-craft-card {
+        margin-bottom: 2rem;
       }
     }
 
     @media (max-width: 480px) {
       .craft-drawer-grid {
-        grid-template-columns: 1fr;
+        column-count: 2;
+        column-gap: 1.2rem;
+      }
+      .drawer-craft-card {
+        margin-bottom: 1.8rem;
+      }
+      /* Scale up text slightly for mobile 2-column view to keep it readable */
+      .drawer-craft-title {
+        font-size: 1.15rem;
+      }
+      .drawer-craft-intent {
+        font-size: 11px;
+        line-height: 1.6;
+      }
+      .drawer-craft-eyebrow {
+        font-size: 10px;
+      }
+      .drawer-craft-link {
+        font-size: 10px;
       }
     }
 
@@ -1336,7 +1386,7 @@
 
       .signal-inner {
         grid-template-columns: 1fr;
-        padding: 6vh 6vw 4rem;
+        padding: 6vh 6vw 4rem 14vw;
         align-items: start;
         align-content: start;
         overflow-y: auto;
@@ -1432,8 +1482,8 @@
     <!-- ① ENTRY -->
     <section class="zone" id="zone-entry">
       <div id="entry-crosshair">
-        <div id="line-v"></div>
-        <div id="line-h"></div>
+        <div id="line-top"></div>
+        <div id="line-bottom"></div>
       </div>
       <div id="entry-wordmark">
         <span class="letter">B</span><span class="letter">A</span><span class="letter">R</span><span
@@ -1655,7 +1705,7 @@
         eyebrow: "// 01",
         category: "fliers",
         keywords: ["flier", "business", "expo", "corporate", "editorial", "yellow", "bold", "poster", "advertising", "typography"],
-        intent: "A grid-based editorial layout designed to project corporate authority. The composition contrasts rigid architectural grids with human-centric monochrome photography, utilizing a striking yellow color-block strategy to guide the viewer's eye through the bold typographic hierarchy.",
+        intent: "A grid-based editorial layout projecting corporate authority. It contrasts architectural grids with monochrome photography and striking yellow color blocks.",
         image: "Photoshop_images/Business_Flier.jpg",
         palette: ["#F5B301", "#0A0A0A", "#FFFFFF", "#4A4A4A"],
         fonts: [
@@ -1670,7 +1720,7 @@
         eyebrow: "// 02",
         category: "documents",
         keywords: ["ID", "card", "identity", "document", "institutional", "UICT", "university", "student", "formal", "official"],
-        intent: "An institutional identity card design for the Uganda Institute of Information and Communications Technology. The layout focuses on maximum legibility, strict typographic hierarchy, and formal alignment, integrating official brand colors with essential security elements like the rear barcode.",
+        intent: "An official identity card prioritizing maximum legibility and strict typographic hierarchy, integrating brand colors with essential security elements.",
         images: [
           "Photoshop_images/UICT_FrontSide_ID.jpg",
           "Photoshop_images/UICT_BackSide_ID.jpg"
@@ -1685,7 +1735,7 @@
         eyebrow: "// 03",
         category: "documents",
         keywords: ["certificate", "document", "premium", "luxury", "beauty", "academy", "gold", "elegant", "formal", "official", "Voguelash"],
-        intent: "A luxury certification document for Voguelash Beauty Academy. The design weaponizes deep emerald green as a commanding, premium backdrop, contrasting elegantly with warm gold typography to communicate prestige and trust. Wide-tracked uppercase headers pair with a flowing script signature typeface, creating a balance between institutional authority and refined elegance.",
+        intent: "A luxury certification document pairing a commanding emerald green backdrop with warm gold typography to communicate prestige, trust, and refined elegance.",
         image: "Photoshop_images/Certificate_Premium.jpg",
         palette: ["#1A5C3A", "#C9A84C", "#FFFFFF", "#0E3D26"],
         fonts: [
@@ -1701,7 +1751,7 @@
         eyebrow: "// 04",
         category: "food",
         keywords: ["oreo", "shake", "milkshake", "poster", "food", "advertising", "cookie", "product", "green", "yellow", "bold", "typography", "commercial", "splash", "beverage", "brand"],
-        intent: "A high-energy commercial poster for 'The Oreo Shake' — built around a deep forest-green textured field that makes the product explode off the canvas. A cinematic milk-splash arc anchors the composition at the base, with Oreo cookies tumbling from above to create depth and motion. The typographic system stacks Brushking's raw brushstroke headers against Eras Bold ITC's tight-tracked caps for 'CRUNCHY CREAMY IRRESISTABLE', while DopéStyle handles the playful badge lettering. Feature icons run in a clean vertical list using Arial for legibility. A high-contrast yellow CTA pill — 'GRAB YOUR OREO SHAKE' — seals the composition with unmistakable commercial intent.",
+        intent: "A high-energy commercial poster featuring a cinematic milk-splash and tumbling cookies. It uses dynamic brushstroke headers and bold typography for maximum impact.",
         image: "Photoshop_images/Oreo Poster-img.jpg",
         palette: ["#1C4A22", "#F5C518", "#FFFFFF", "#0D0D0D"],
         fonts: [
@@ -1718,7 +1768,7 @@
         eyebrow: "// 05",
         category: "documents",
         keywords: ["wedding", "invitation", "card", "elegant", "gold", "floral", "minimalist", "typography", "calibri", "high spirited"],
-        intent: "A premium, elegant wedding invitation card designed with a striking dark mode aesthetic. The deep black canvas is enriched with delicate, hand-drawn golden botanical illustrations framing the elegant typography. The layout beautifully pairs a flowing, expressive script typeface for the names with a clean, structured sans-serif for the event details, achieving a sophisticated balance between modern minimalism and classic romance.",
+        intent: "A dark-mode invitation featuring delicate, hand-drawn golden botanical illustrations. It pairs flowing script with structured sans-serif for a classic romance aesthetic.",
         image: "Photoshop_images/Wedding_Invitation_card.jpg",
         palette: ["#000000", "#D4AF37", "#EDE8DF", "#1A1A1A"],
         fonts: [
@@ -1727,6 +1777,21 @@
         ],
         psdLink: "https://raw.githubusercontent.com/Barclaynes-dev/Graphics-Design/main/01_Production/Wedding_Invitation.psd",
         psdSize: "7.51 MB"
+      },
+      {
+        title: "Premium Food Menu",
+        eyebrow: "// 06",
+        category: "food",
+        keywords: ["food", "menu", "restaurant", "cafe", "dining", "elegant", "typography", "palette", "fonts"],
+        intent: "A sophisticated menu layout balancing structure with modern elegance. Clean typography and an organic color palette elevate the dish presentation.",
+        image: "Photoshop_images/Food_Menu_Card.jpg",
+        palette: ["#2C1B18", "#D4AF37", "#EDE8DF", "#5C3E35"],
+        fonts: [
+          { name: "Playfair Display", style: "font-family: 'Playfair Display', serif; font-weight: 700; text-transform: uppercase;" },
+          { name: "Montserrat", style: "font-family: 'Montserrat', sans-serif; font-weight: 400; letter-spacing: 0.1em;" }
+        ],
+        psdLink: "https://raw.githubusercontent.com/Barclaynes-dev/Graphics-Design/main/01_Production/Food_Menu.psd",
+        psdSize: "75.94 MB"
       }
     ];
 
@@ -1896,7 +1961,7 @@
             <span class="drawer-craft-title">${piece.title}</span>
             <div class="drawer-craft-palette">${paletteHtml}</div>
             <p class="drawer-craft-intent">${piece.intent}</p>
-            <a href="${piece.psdLink}" target="_blank" class="drawer-craft-link">DOWNLOAD PSD ↗</a>
+            <a href="${piece.psdLink}" target="_blank" class="drawer-craft-link" data-size="${piece.psdSize || ''}">DOWNLOAD PSD ↗</a>
           </div>
         `;
 
@@ -2001,6 +2066,37 @@
       });
     }
 
+    function initPsdTooltip() {
+      const tooltip = document.createElement("div");
+      tooltip.className = "psd-tooltip";
+      document.body.appendChild(tooltip);
+
+      const drawerGrid = document.getElementById("craft-drawer-grid");
+      if (!drawerGrid) return;
+
+      drawerGrid.addEventListener("mouseover", (e) => {
+        const link = e.target.closest(".drawer-craft-link");
+        if (!link) return;
+        const size = link.getAttribute("data-size");
+        if (size) {
+          tooltip.textContent = `${size}`;
+          tooltip.classList.add("visible");
+        }
+      });
+
+      drawerGrid.addEventListener("mousemove", (e) => {
+        tooltip.style.left = e.clientX + "px";
+        tooltip.style.top = e.clientY + "px";
+      });
+
+      drawerGrid.addEventListener("mouseout", (e) => {
+        const link = e.target.closest(".drawer-craft-link");
+        if (link) {
+          tooltip.classList.remove("visible");
+        }
+      });
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("craft-drawer-back").addEventListener("click", closeCraftDrawer);
       // Also close on Escape key
@@ -2088,23 +2184,15 @@
     function runEntrySequence() {
       const tl = gsap.timeline();
 
-      // 1. Vertical line draws down
-      tl.to("#line-v", { height: "45vh", duration: 1.2, ease: "power2.inOut" }, 0.6)
+      // 1. Lines come in from top and bottom (meet at center)
+      tl.to(["#line-top", "#line-bottom"], { scaleY: 1, duration: 1.2, ease: "power2.inOut" }, 0.6)
 
-        // 2. Horizontal line shoots out
-        .to("#line-h", {
-          width: "100vw",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          duration: 0.6,
-          ease: "power3.out"
-        }, "-=0.1")
+        // 2. Lines quickly retreat to their respective edges
+        .to("#line-top", { scaleY: 0, duration: 0.45, ease: "power2.in" }, "+=0.2")
+        .to("#line-bottom", { scaleY: 0, duration: 0.45, ease: "power2.in" }, "<")
 
-        // 3. Lines fade
-        .to(["#line-v", "#line-h"], { opacity: 0, duration: 0.5, ease: "power1.in" }, "+=0.4")
-
-        // 4. Wordmark materializes — letters stagger from outside in
-        .set("#entry-wordmark", { opacity: 1 })
+        // 3. Wordmark materializes
+        .set("#entry-wordmark", { opacity: 1 }, "-=0.25")
         .fromTo(".letter",
           { opacity: 0, y: 22 },
           {
@@ -2112,13 +2200,13 @@
             duration: 0.6,
             stagger: { each: 0.06, from: "center" },
             ease: "power3.out"
-          }, "-=0.3")
+          }, "<")
 
-        // 5. Subtitle
-        .to("#entry-sub", { opacity: 1, duration: 0.5 }, "-=0.1")
+      // 4. Subtitle
+      .to("#entry-sub", { opacity: 1, duration: 0.5 }, "-=0.1")
 
-        // 6. Enter prompt
-        .to("#enter-prompt", { opacity: 1, duration: 0.6, ease: "power2.out" }, "+=0.3");
+      // 5. Enter prompt
+      .to("#enter-prompt", { opacity: 1, duration: 0.6, ease: "power2.out" }, "+=0.3");
     }
 
     /* ============================================================
@@ -2128,7 +2216,7 @@
       if (worldEntered) return;
       worldEntered = true;
 
-      gsap.to(["#entry-wordmark", "#entry-sub", "#enter-prompt", "#line-v", "#line-h"], {
+      gsap.to(["#entry-wordmark", "#entry-sub", "#enter-prompt", "#line-top", "#line-bottom"], {
         opacity: 0,
         y: -20,
         duration: 0.5,
@@ -2315,6 +2403,7 @@
       initKeyboard();
       initDots();
       initSwipe();
+      initPsdTooltip();
 
       // Keep nav arrows hidden until world entered handled by #top-nav-container opacity
 
