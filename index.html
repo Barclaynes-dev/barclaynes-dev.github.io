@@ -1058,7 +1058,7 @@
     .drawer-craft-card {
       break-inside: avoid;
       margin-bottom: 2.5rem;
-      display: inline-flex;
+      display: flex;
       flex-direction: column;
       gap: 1.2rem;
       cursor: pointer;
@@ -1943,7 +1943,7 @@
 
         let imgHtml;
         if (primaryImg) {
-          imgHtml = `<img src="${primaryImg}" alt="${piece.title}" loading="lazy" />`;
+          imgHtml = `<img src="${primaryImg}" alt="${piece.title}" />`;
         } else {
           imgHtml = `<div class="craft-placeholder">// DESIGN WORK<br />COMING SOON</div>`;
         }
@@ -2136,8 +2136,8 @@
       // Slide world
       gsap.to("#world", {
         x: -(index * 100) + "vw",
-        duration: 1,
-        ease: "power3.inOut",
+        duration: 0.6,
+        ease: "power3.out",
         onComplete: () => {
           isAnimating = false;
           animateZoneIn(index);
@@ -2373,7 +2373,7 @@
       document.addEventListener("touchstart", e => { startX = e.touches[0].clientX; });
       document.addEventListener("touchend", e => {
         const diff = startX - e.changedTouches[0].clientX;
-        if (Math.abs(diff) > 50) navigateZone(diff > 0 ? 1 : -1);
+        if (Math.abs(diff) > 30) navigateZone(diff > 0 ? 1 : -1);
       });
     }
 
