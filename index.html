@@ -1752,7 +1752,7 @@
         category: "food",
         keywords: ["oreo", "shake", "milkshake", "poster", "food", "advertising", "cookie", "product", "green", "yellow", "bold", "typography", "commercial", "splash", "beverage", "brand"],
         intent: "A high-energy commercial poster featuring a cinematic milk-splash and tumbling cookies. It uses dynamic brushstroke headers and bold typography for maximum impact.",
-        image: "Photoshop_images/Oreo Poster img.jpg",
+        image: "Photoshop_images/Oreo_Poster_img.jpg",
         palette: ["#1C4A22", "#F5C518", "#FFFFFF", "#0D0D0D"],
         fonts: [
           { name: "Brushking", style: "font-family: cursive; font-size: 28px; font-weight: 700; letter-spacing: 0.02em; font-style: italic; color: #FFFFFF;" },
@@ -1784,7 +1784,7 @@
         category: "food",
         keywords: ["food", "menu", "restaurant", "cafe", "dining", "elegant", "typography", "palette", "fonts"],
         intent: "A sophisticated menu layout balancing structure with modern elegance. Clean typography and an organic color palette elevate the dish presentation.",
-        image: "Photoshop_images/Food Menu Card.jpg",
+        image: "Photoshop_images/Food_Menu_Card.jpg",
         palette: ["#2C1B18", "#D4AF37", "#EDE8DF", "#5C3E35"],
         fonts: [
           { name: "Playfair Display", style: "font-family: 'Playfair Display', serif; font-weight: 700; text-transform: uppercase;" },
@@ -1837,6 +1837,7 @@
     ============================================================ */
     function buildCrafts() {
       const list = document.getElementById("craft-list");
+      // MUST ONLY HAVE 4 ITEMS - REST GO TO DRAWER (VIEW MORE)
       craftPieces.slice(0, 4).forEach((piece) => {
         const item = document.createElement("div");
         item.className = "craft-item fade-in-zone";
