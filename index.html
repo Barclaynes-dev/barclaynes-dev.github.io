@@ -1148,8 +1148,19 @@
       margin-top: 0.2rem;
     }
 
-    .drawer-craft-link {
+    .drawer-craft-link-wrapper {
       margin-top: auto;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .drawer-craft-size-mobile {
+      display: none;
+    }
+
+    .drawer-craft-link {
       font-size: 9px;
       letter-spacing: 0.2em;
       color: var(--parchment-dim);
@@ -1208,6 +1219,14 @@
       }
       .drawer-craft-card {
         margin-bottom: 2rem;
+      }
+      .drawer-craft-size-mobile {
+        display: inline-block;
+        font-size: 9px;
+        letter-spacing: 0.2em;
+        color: var(--parchment-dim);
+        border: 1px solid rgba(237, 232, 223, 0.15);
+        padding: 2px 8px;
       }
     }
 
@@ -1792,6 +1811,20 @@
         ],
         psdLink: "https://raw.githubusercontent.com/Barclaynes-dev/Graphics-Design/main/01_Production/Food_Menu.psd",
         psdSize: "75.94 MB"
+      },
+      {
+        title: "Polar Shirt",
+        eyebrow: "// 07",
+        category: "assets",
+        keywords: ["polar", "shirt", "apparel", "clothing", "mockup", "design", "merchandise"],
+        intent: "A clean and modern apparel design showcasing the Polar brand identity. Uses subtle contrasts and strong typography to emphasize the brand's aesthetic.",
+        image: "Photoshop_images/polarshirt.jpg",
+        palette: ["#FFFFFF", "#000000", "#1A1A1A", "#EDE8DF"],
+        fonts: [
+          { name: "Helvetica", style: "font-family: 'Helvetica', sans-serif; font-weight: 700;" }
+        ],
+        psdLink: "https://raw.githubusercontent.com/Barclaynes-dev/Graphics-Design/main/01_Production/polar%20shirt.psd",
+        psdSize: "18.3 MB"
       }
     ];
 
@@ -1962,7 +1995,10 @@
             <span class="drawer-craft-title">${piece.title}</span>
             <div class="drawer-craft-palette">${paletteHtml}</div>
             <p class="drawer-craft-intent">${piece.intent}</p>
-            <a href="${piece.psdLink}" target="_blank" class="drawer-craft-link" data-size="${piece.psdSize || ''}">DOWNLOAD PSD ↗</a>
+            <div class="drawer-craft-link-wrapper">
+              <a href="${piece.psdLink}" target="_blank" class="drawer-craft-link" data-size="${piece.psdSize || ''}">DOWNLOAD PSD ↗</a>
+              ${piece.psdSize ? `<span class="drawer-craft-size-mobile">${piece.psdSize}</span>` : ''}
+            </div>
           </div>
         `;
 
